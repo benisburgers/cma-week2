@@ -61,3 +61,62 @@ wildschwein_BE$speed <- wildschwein_BE$steplength / wildschwein_BE$timelag
 wildschwein_BE
 
 # => Speed = Steplength per second => But what is steplength?
+
+# Task 4: Cross-scale movement analysis
+
+
+wildschwein_BE <- read_delim("wildschwein_BE_2056.csv",",") # adjust path
+
+wildschwein_BE
+
+wildschwein_BE <- st_as_sf(wildschwein_BE, coords = c("E", "N"), crs = 2056, remove = FALSE)
+
+caro <- read_delim("caro60.csv")
+caro
+caro <- st_as_sf(caro, coords = c("E", "N"), crs = 2056, remove = FALSE)
+caro
+
+caro_3 <- caro %>%
+  filter(row_number() == 1 | row_number() %% 3 == 0)
+
+caro_6 <- caro %>%
+  filter(row_number() == 1 | row_number() %% 6 == 0)
+
+caro_9 <- caro %>%
+  filter(row_number() == 1 | row_number() %% 9 == 0)
+
+nrow(caro)
+nrow(caro_3)
+nrow(caro_6)
+nrow(caro_9)
+
+lead(caro$DatetimeUTC, 1)
+
+calc_step_and_speed <- function(df) {
+  
+  df <- mutate(df, timelag = as.numeric(difftime(lead(DatetimeUTC), DatetimeUTC, unit = "secs")))
+  df <- mutate(df, steplength = ((lead(E, 1) - E)^2 + (lead(N, 1) - N)^2)^(1/2))
+  df <- mutate(df, speed = steplength / timelag)
+  
+  return(df)
+}
+
+caro <- calc_step_and_speed(caro)
+caro
+
+caro_3 <- calc_step_and_speed(caro_3)
+caro_3
+
+caro_6 <- calc_step_and_speed(caro_6)
+caro_6
+
+caro_9 <- calc_step_and_speed(caro_9)
+caro_9
+
+caro_combined <- bind_rows("1 minute" = caro, "3 minute" = caro_3, "6 minute" = caro_6, "9 minute" = caro_9, .id = "groups")
+
+caro_combined <- drop_na(caro_combined, speed)
+
+caro_combined %>%
+  ggplot(mapping = aes(x = DatetimeUTC, y = speed, colour = groups)) +
+  geom_line()
