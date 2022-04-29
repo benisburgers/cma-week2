@@ -49,7 +49,7 @@ wildschwein_dates %>%
 # => Concurrently
 
 # What is the temporal sampling interval between the locations?
-# => What does that even mean?
+# => What does that mean?
 
 
 # Task 3: Deriving movement parameters I: Speed
@@ -61,10 +61,10 @@ wildschwein_BE
 wildschwein_BE$speed <- wildschwein_BE$steplength / wildschwein_BE$timelag
 wildschwein_BE
 
-# => Speed = Steplength per second => But what is steplength?
+# => Speed = Steplength per second => But what is steplength? => Apparently it's meter (see Task 4, last plot) => m/s
+
 
 # Task 4: Cross-scale movement analysis
-
 
 wildschwein_BE <- read_delim("wildschwein_BE_2056.csv",",") # adjust path
 
