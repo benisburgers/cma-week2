@@ -20,6 +20,8 @@ wildschwein_BE$timelag <- as.numeric(difftime(lead(wildschwein_BE$DatetimeUTC), 
 wildschwein_BE
 
 
+# Task 2: Getting an overview
+
 # How many individuals were tracked?
 unique(wildschwein_BE$TierID)
 unique(wildschwein_BE$TierName)
@@ -47,3 +49,15 @@ wildschwein_dates %>%
 
 # What is the temporal sampling interval between the locations?
 # => What does that even mean?
+
+
+# Task 3: Deriving movement parameters I: Speed
+
+wildschwein_BE$steplength <- 
+  ((lead(wildschwein_BE$E, 1) - wildschwein_BE$E)^2 + (lead(wildschwein_BE$N, 1) - wildschwein_BE$N)^2)^(1/2)
+wildschwein_BE
+
+wildschwein_BE$speed <- wildschwein_BE$steplength / wildschwein_BE$timelag
+wildschwein_BE
+
+# => Speed = Steplength per second => But what is steplength?
