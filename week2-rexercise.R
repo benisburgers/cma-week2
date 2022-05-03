@@ -43,7 +43,10 @@ wildschwein_dates %>%
   geom_segment(aes(x = startTime, xend = endTime, y = TierID, yend = TierID), size = 0.5) +
   xlab("DatetimeUTC")
 
-
+wildschwein_BE %>%
+  ggplot() +
+  geom_freqpoly(mapping = aes(x = timelag, colour = TierName)) +
+  xlim(c(700, 1000))
 
 # Were all individuals tracked concurrently or sequentially?
 # => Concurrently
@@ -65,12 +68,6 @@ wildschwein_BE
 
 
 # Task 4: Cross-scale movement analysis
-
-wildschwein_BE <- read_delim("wildschwein_BE_2056.csv",",") # adjust path
-
-wildschwein_BE
-
-wildschwein_BE <- st_as_sf(wildschwein_BE, coords = c("E", "N"), crs = 2056, remove = FALSE)
 
 caro <- read_delim("caro60.csv")
 caro
