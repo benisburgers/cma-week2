@@ -41,18 +41,21 @@ wildschwein_dates
 wildschwein_dates %>%
   ggplot(aes(color = duration)) +
   geom_segment(aes(x = startTime, xend = endTime, y = TierID, yend = TierID), size = 0.5) +
-  xlab("DatetimeUTC")
+  xlab("DatetimeUTC") +
+  labs(color='Measurement \nduration [days]') 
+
+# Were all individuals tracked concurrently or sequentially?
+# => Interpretation: All the animals were measured concurrently at least at point
 
 wildschwein_BE %>%
   ggplot() +
   geom_freqpoly(mapping = aes(x = timelag, colour = TierName)) +
-  xlim(c(700, 1000))
-
-# Were all individuals tracked concurrently or sequentially?
-# => Concurrently
+  xlim(c(700, 1000)) +
+  labs(color='Name of animal') 
 
 # What is the temporal sampling interval between the locations?
 # => What does that mean?
+# =>  Interpretation: I show, however, that the large majority of timelags (for all three individuals) was somewhere between 850 and 950 seconds
 
 
 # Task 3: Deriving movement parameters I: Speed
@@ -64,7 +67,8 @@ wildschwein_BE
 wildschwein_BE$speed <- wildschwein_BE$steplength / wildschwein_BE$timelag
 wildschwein_BE
 
-# => Speed = Steplength per second => But what is steplength? => Apparently it's meter (see Task 4, last plot) => m/s
+# => Interpretation: Speed = Steplength per second => But what is steplength? => Apparently it's meter (see Task 4, last plot) 
+# => As such, speed = m/s
 
 
 # Task 4: Cross-scale movement analysis
@@ -73,6 +77,8 @@ caro <- read_delim("caro60.csv")
 caro
 caro <- st_as_sf(caro, coords = c("E", "N"), crs = 2056, remove = FALSE)
 caro
+
+# Calculating speed at different intervals:
 
 caro_3 <- caro %>%
   filter(row_number() == 1 | row_number() %% 3 == 0)
@@ -90,6 +96,7 @@ nrow(caro_9)
 
 lead(caro$DatetimeUTC, 1)
 
+# (Here's a little function that does it for you)
 calc_step_and_speed <- function(df) {
   
   df <- mutate(df, timelag = as.numeric(difftime(lead(DatetimeUTC), DatetimeUTC, unit = "secs")))
@@ -111,13 +118,36 @@ caro_6
 caro_9 <- calc_step_and_speed(caro_9)
 caro_9
 
+# Visualizing derived speed at different sampling intervals:
+
 caro_combined <- bind_rows("1 minute" = caro, "3 minute" = caro_3, "6 minute" = caro_6, "9 minute" = caro_9, .id = "groups")
 
 caro_combined <- drop_na(caro_combined, speed)
 
 caro_combined %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = speed, colour = groups)) +
-  geom_line()
+  geom_line() +
+  labs(color='Measurement interval') 
+
+# => Interpretation: The longer the intervals, the slower the derived speeds and the smaller the values of acceleration and deceleration. In other words: When deriving the sped at a low interval (i.e. 9 minutes), everything becomes a little calmer, the individuals are not speeding up / slowing down as quickly as when deriving the speed at a high interval (i.e. 1 minute)
+
+# Visualizing the trajectories:
+
+caro_combined %>%
+  ggplot() +
+  geom_path(mapping = aes(x = E, y = N)) +
+  facet_wrap(~ groups, ncol = 2)
+
+# => Interpretation: This graph is not as pretty as the example. However, it shows quickly that the interval at which speed is derived, has a strong effect on the mapping of the trajectories. Namely, the higher the interval (i.e. 1 minute), the rounder the edges and the more precise the trajectory. The lower the interval (i.e. 9 minutes), the sharper the edges and the rougher and less accurate the trajectories.
+
+# One more pretty graph:
+
+caro_combined %>%
+  filter(groups == "1 minute" | groups == "3 minute") %>%
+  ggplot(mapping = aes(x = E, y = N, color = groups)) +
+  geom_point() +
+  geom_path() +
+  labs(color='Measurement Interval') 
 
 
 # Task 5: Deriving movement parameters II: Rolling window functions
@@ -130,34 +160,43 @@ example
 rollmean(example, k = 3, fill = NA, align = "left")
 rollmean(example, k = 4, fill = NA, align = "left")
 
-par(mfrow = c(2, 2))
+# Plotting and comparing speed with different moving window intervalls:
 
 caro$rollmean_3 <- rollmean(caro$speed, k = 3, fill = NA, align = "left")
 rm3_plot <- caro %>% 
   drop_na(rollmean_3) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = rollmean_3)) +
-  geom_line()
+  geom_line() +
+  labs(y = "Speed", x = "Time", title = "k = 3")
 rm3_plot
 
 caro$rollmean_4 <- rollmean(caro$speed, k = 4, fill = NA, align = "left")
 rm4_plot <- caro %>% 
   drop_na(rollmean_4) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = rollmean_4)) +
-  geom_line()
+  geom_line() +
+  labs(y = "Speed", x = "Time", title = "k = 4")
 rm4_plot
 
 caro$rollmean_8 <- rollmean(caro$speed, k = 8, fill = NA, align = "left")
 rm8_plot <- caro %>% 
   drop_na(rollmean_8) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = rollmean_8)) +
-  geom_line()
+  geom_line() +
+  labs(y = "Speed", x = "Time", title = "k = 8")
 rm8_plot
 
 orig_plot <- caro %>% 
   drop_na(speed) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = speed)) +
-  geom_line()
+  geom_line() +
+  labs(y = "Speed", x = "Time", title = "original")
 orig_plot
 
+# => Showing the derived speeds with different rolling windows all at once:
+
 library(cowplot)
-plot_grid(orig_plot, rm3_plot, rm4_plot, rm8_plot, labels = c('Original', 'Rollmean 3', 'Rollmean 4', 'Rollmean 8'))
+plot_grid(orig_plot, rm3_plot, rm4_plot, rm8_plot)
+
+# => Interpretation: The plot shows that the higher the rollmean value (k) (i.e. the larger the moving window), the rounder the curve becomes.
+# The edges become less sharp and we get a smoother curve
