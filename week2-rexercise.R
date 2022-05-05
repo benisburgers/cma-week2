@@ -130,20 +130,34 @@ example
 rollmean(example, k = 3, fill = NA, align = "left")
 rollmean(example, k = 4, fill = NA, align = "left")
 
+par(mfrow = c(2, 2))
+
 caro$rollmean_3 <- rollmean(caro$speed, k = 3, fill = NA, align = "left")
-caro %>% 
+rm3_plot <- caro %>% 
   drop_na(rollmean_3) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = rollmean_3)) +
   geom_line()
+rm3_plot
 
 caro$rollmean_4 <- rollmean(caro$speed, k = 4, fill = NA, align = "left")
-caro %>% 
+rm4_plot <- caro %>% 
   drop_na(rollmean_4) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = rollmean_4)) +
   geom_line()
+rm4_plot
 
 caro$rollmean_8 <- rollmean(caro$speed, k = 8, fill = NA, align = "left")
-caro %>% 
+rm8_plot <- caro %>% 
   drop_na(rollmean_8) %>%
   ggplot(mapping = aes(x = DatetimeUTC, y = rollmean_8)) +
   geom_line()
+rm8_plot
+
+orig_plot <- caro %>% 
+  drop_na(speed) %>%
+  ggplot(mapping = aes(x = DatetimeUTC, y = speed)) +
+  geom_line()
+orig_plot
+
+library(cowplot)
+plot_grid(orig_plot, rm3_plot, rm4_plot, rm8_plot, labels = c('Original', 'Rollmean 3', 'Rollmean 4', 'Rollmean 8'))
